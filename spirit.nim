@@ -134,8 +134,14 @@ proc ensureFoldersExist() =
   createDir(logDest)
 
 
+proc ensureProcfileExists() =
+  if not existsFile("./Procfile"):
+    quit("Unable to find Procfile", 1)
+
+
 proc main() =
   ensureFoldersExist()
+  ensureProcfileExists()
 
   if paramCount() == 0: quit(Usage, 1)
 
