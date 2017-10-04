@@ -91,7 +91,7 @@ proc processStart(processName: string) =
     let pid = lookupPid(pidFile)
 
     if isProcessRunning(pid):
-      quit()
+      return
 
   let process = findProcess(processName)
   let args = ["-r", "-o", makeLogfile(processName), "-p", makePid(processName), "-P", makeDaemonPid(processName), process.cmdline]
@@ -103,10 +103,8 @@ proc processStop(processName: string) =
   let pidFile = makeDaemonPid(processName)
 
   if existsFile(pidFile):
-    let pid = lookupPid(pidFile)
-
-    if isProcessRunning(pid) and posix.kill(pid, 15) == 0:
-      quit(0)
+    let daemonPid = lookupPid(pidFile)
+    discard posix.kill(daemonPid, 15)
 
 
 proc processLog(processName: string) =
