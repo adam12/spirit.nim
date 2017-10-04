@@ -61,15 +61,13 @@ proc makePid(processName: string): string =
   pidDest / processName & ".pid"
 
 
-proc existsPidfile(processName: string): bool =
-  return existsFile(makePid processName)
+proc makeDaemonPid(processName: string): string =
+  pidDest / processName & ".daemon.pid"
 
 
-proc lookupPid(processName: string): Pid =
-  let pidFile = makePid(processName)
+proc lookupPid(pidFile: string): Pid =
   let line = readFile(pidFile)
-
-  result = parseInt(line.strip)
+  parseInt(line.strip)
 
 
 proc isProcessRunning(pid: Pid): bool =
@@ -87,21 +85,25 @@ proc findProcess(processName: string): Process =
 
 
 proc processStart(processName: string) =
-  if existsPidfile(processName):
-    let pid = lookupPid(processName)
+  let pidFile = makeDaemonPid(processName)
+
+  if existsFile(pidFile):
+    let pid = lookupPid(pidFile)
 
     if isProcessRunning(pid):
       quit()
 
   let process = findProcess(processName)
-  let args = ["-r", "-o", makeLogfile(processName), "-P", makePid(processName), process.cmdline]
+  let args = ["-r", "-o", makeLogfile(processName), "-p", makePid(processName), "-P", makeDaemonPid(processName), process.cmdline]
 
   discard os.execShellCmd(daemonBin & " " & args.join(" "))
 
 
 proc processStop(processName: string) =
-  if existsPidFile(processName):
-    let pid = lookupPid(processName)
+  let pidFile = makeDaemonPid(processName)
+
+  if existsFile(pidFile):
+    let pid = lookupPid(pidFile)
 
     if isProcessRunning(pid) and posix.kill(pid, 15) == 0:
       quit(0)
@@ -118,15 +120,24 @@ proc processTail(processName: string) =
 
 
 proc processStatus(processName: string): string =
-  if existsPidFile(processName):
-    let pid = lookupPid(processName)
+  # no daemon pid, no process pid = stopped
+  # process pid && running = running
+  # else dead
 
-    if isProcessRunning(pid):
+  let daemonPidFile = makeDaemonPid(processName)
+  let pidFile = makePid(processName)
+
+  if not existsFile(daemonPidFile) and not existsFile(pidFile):
+    result = "stopped"
+  elif existsFile(pidFile):
+    let pid = lookupPid(pidFile)
+
+    if isProcessrunning(pid):
       result = "running"
     else:
-      result = "stopped"
+      result = "dead"
   else:
-    result = "stopped"
+    result = "dead"
 
 
 proc ensureFoldersExist() =
