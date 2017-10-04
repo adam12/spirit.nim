@@ -66,9 +66,8 @@ proc existsPidfile(processName: string): bool =
 
 
 proc lookupPid(processName: string): Pid =
-  var
-    pidFile = makePid(processName)
-    line = readFile(pidFile)
+  let pidFile = makePid(processName)
+  let line = readFile(pidFile)
 
   result = parseInt(line.strip)
 
