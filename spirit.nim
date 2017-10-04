@@ -94,7 +94,14 @@ proc processStart(processName: string) =
       return
 
   let process = findProcess(processName)
-  let args = ["-r", "-o", makeLogfile(processName), "-p", makePid(processName), "-P", makeDaemonPid(processName), process.cmdline]
+  let args = [
+          "-t", processName,
+          "-r",
+          "-o", makeLogfile(processName),
+          "-p", makePid(processName),
+          "-P", makeDaemonPid(processName),
+          process.cmdline
+          ]
 
   discard os.execShellCmd(daemonBin & " " & args.join(" "))
 
