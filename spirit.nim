@@ -5,7 +5,8 @@ import
   posix,
   strutils,
   osproc,
-  terminal
+  terminal,
+  strtabs
 
 type
   Process = tuple
@@ -65,6 +66,17 @@ proc makeDaemonPid(processName: string): string =
   pidDest / processName & ".daemon.pid"
 
 
+proc evalEnv(envFile: string): StringTableRef =
+  var key, value: string
+  result = newStringTable()
+
+  if not existsFile(envFile): return result
+
+  for line in envFile.lines:
+    if scanf(line, "$w=$+$.", key, value):
+      result[key] = value
+
+
 proc lookupPid(pidFile: string): Pid =
   let line = readFile(pidFile)
   parseInt(line.strip)
@@ -94,6 +106,10 @@ proc processStart(processName: string) =
       return
 
   let process = findProcess(processName)
+  let env = evalEnv(".env")
+  for key, value in envPairs():
+    env[key] = value
+
   let args = [
           "-t", processName,
           "-r",
@@ -103,7 +119,14 @@ proc processStart(processName: string) =
           process.cmdline
           ]
 
-  discard os.execShellCmd(daemonBin & " " & args.join(" "))
+  let p = startProcess(
+    command=daemonBin,
+    args=args,
+    env=env,
+    options={poStdErrToStdOut, poUsePath}
+    )
+
+  close(p)
 
 
 proc processStop(processName: string) =
@@ -214,3 +237,5 @@ proc main() =
 
 
 main()
+
+# vim:ts=2:sts=2:sw=2:et
