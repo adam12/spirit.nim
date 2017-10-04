@@ -103,9 +103,8 @@ proc processStop(processName: string) =
   if existsPidFile(processName):
     let pid = lookupPid(processName)
 
-    if isProcessRunning(pid):
-      if posix.kill(pid, 15) == 0:
-        quit(0)
+    if isProcessRunning(pid) and posix.kill(pid, 15) == 0:
+      quit(0)
 
 
 proc processLog(processName: string) =
