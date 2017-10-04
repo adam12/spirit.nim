@@ -25,6 +25,21 @@ if defined(freebsd):
 else:
   daemonBin = "/usr/bin/true"
 
+const Usage = """
+Usage: spirit COMMAND [opts]
+
+Commands:
+
+  start       [process name]
+  stop        [process name]
+  restart     [process name]
+  log         [process name]
+  tail        [process name]
+  status
+
+Options:
+"""
+
 proc parseProcfile(procfile: string): seq[Process] =
   var
     name, cmdline: string
@@ -37,14 +52,18 @@ proc parseProcfile(procfile: string): seq[Process] =
       p = (name, cmdline)
       result.add(p)
 
+
 proc makeLogfile(processName: string): string =
   logDest / processName & ".log"
+
 
 proc makePid(processName: string): string =
   pidDest / processName & ".pid"
 
+
 proc existsPidfile(processName: string): bool =
   return existsFile(makePid processName)
+
 
 proc lookupPid(processName: string): Pid =
   var
@@ -53,8 +72,10 @@ proc lookupPid(processName: string): Pid =
 
   result = parseInt(line.strip)
 
+
 proc isProcessRunning(pid: Pid): bool =
   return posix.kill(pid, 0) == 0
+
 
 proc findProcess(processName: string): Process =
   let processes = parseProcfile("./Procfile")
@@ -63,7 +84,8 @@ proc findProcess(processName: string): Process =
   if len(matchedProcesses) == 1:
     result = matchedProcesses[0]
   else:
-    quit("Unknown process: " & processName)
+    quit("Unknown process: " & processName, 1)
+
 
 proc processStart(processName: string) =
   if existsPidfile(processName):
@@ -71,7 +93,6 @@ proc processStart(processName: string) =
 
     if isProcessRunning(pid):
       quit()
-      # quit("Process is already running with pid " & $pid)
 
   let process = findProcess(processName)
   let args = ["-r", "-o", makeLogfile(processName), "-P", makePid(processName), process.cmdline]
@@ -79,6 +100,7 @@ proc processStart(processName: string) =
   # TODO: Properly log command
   # echo daemonBin & " " & args.join(" ")
   discard os.execShellCmd(daemonBin & " " & args.join(" "))
+
 
 proc processStop(processName: string) =
   if existsPidFile(processName):
@@ -88,12 +110,16 @@ proc processStop(processName: string) =
       if posix.kill(pid, 15) == 0:
         quit(0)
 
+
 proc processLog(processName: string) =
   let logfile = makeLogfile(processName)
-  
+  discard execShellCmd("less " & logfile)
+
 
 proc processTail(processName: string) =
   let logfile = makeLogfile(processname)
+  discard execShellCmd("tail -f " & logfile)
+
 
 proc processStatus(processName: string): string =
   if existsPidFile(processName):
@@ -111,10 +137,11 @@ proc ensureFoldersExist() =
   createDir(pidDest)
   createDir(logDest)
 
+
 proc main() =
   ensureFoldersExist()
 
-  if paramCount() == 0: quit("TODO: Show help")
+  if paramCount() == 0: quit(Usage, 1)
 
   let command = paramStr(1)
 
@@ -137,25 +164,35 @@ proc main() =
       for process in items processes:
         processStop(process.name)
 
+  of "restart":
+    if paramCount() == 2:
+      let processName = paramStr(2)
+      processStop(processName)
+      processStart(processName)
+    else:
+      let processes = parseProcfile("./Procfile")
+      for process in items processes:
+        processStop(process.name)
+        processStart(process.name)
+
   of "log":
     if paramCount() == 2:
       let processName = paramStr(2)
       processLog(processName)
     else:
-      # FIXME: Proper quit message and status code
-      quit("Must pass process name to log")
+      quit(Usage, 1)
 
   of "tail":
     if paramCount() == 2:
       let processName = paramStr(2)
       processTail(processName)
     else:
-      # FIXME: Proper quit message and status code
-      quit("Must pass process name to tail")
+      quit(Usage, 1)
 
   else:
     let processes = parseProcfile("./Procfile")
     for process in items processes:
       echo process.name & ":" & spaces(max(0, 15 - process.name.len)) & processStatus(process.name)
+
 
 main()
