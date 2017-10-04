@@ -96,8 +96,6 @@ proc processStart(processName: string) =
   let process = findProcess(processName)
   let args = ["-r", "-o", makeLogfile(processName), "-P", makePid(processName), process.cmdline]
 
-  # TODO: Properly log command
-  # echo daemonBin & " " & args.join(" ")
   discard os.execShellCmd(daemonBin & " " & args.join(" "))
 
 
