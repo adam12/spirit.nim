@@ -36,6 +36,7 @@ Commands:
   restart     [process name]
   log         [process name]
   tail        [process name]
+  run         [command]
   status
 
 Options:
@@ -95,6 +96,13 @@ proc findProcess(processName: string): Process =
   else:
     quit("Unknown process: " & processName, 1)
 
+
+proc runCommand() =
+  for key, value in evalEnv(".env"):
+    putEnv(key, value)
+
+  let command = commandLineParams()[1..^1].join(" ")
+  discard execCmd(command)
 
 proc processStart(processName: string) =
   let pidFile = makeDaemonPid(processName)
@@ -229,6 +237,9 @@ proc main() =
       processTail(processName)
     else:
       quit(Usage, 1)
+
+  of "run":
+    runCommand()
 
   else:
     let processes = parseProcfile("./Procfile")
