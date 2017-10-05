@@ -75,6 +75,9 @@ proc evalEnv(envFile: string): StringTableRef =
 
   for line in envFile.lines:
     if scanf(line, "$w=$+$.", key, value):
+      if value.startsWith("\"") and value.endsWith("\""):
+        value = value[1..^2]
+
       result[key] = value
 
 
