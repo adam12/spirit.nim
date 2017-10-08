@@ -21,7 +21,7 @@ var
 # Cleanup any ANSI attributes at exit
 system.addQuitProc(resetAttributes)
 
-if defined(freebsd):
+when defined(freebsd):
   daemonBin = "/usr/sbin/daemon"
 else:
   daemonBin = "/usr/bin/true"
