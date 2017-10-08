@@ -244,10 +244,13 @@ proc main() =
   of "run":
     runCommand()
 
-  else:
+  of "status":
     let processes = parseProcfile("./Procfile")
     for process in items processes:
       echo process.name & ":" & spaces(max(0, 15 - process.name.len)) & processStatus(process.name)
+
+  else:
+    quit(Usage, 1)
 
 
 main()
