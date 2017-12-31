@@ -1,6 +1,8 @@
 # Spirit
 _Giving life to a user's FreeBSD daemons_
 
+**This project is deprecated in favour of [Spirit.go](https://github.com/adam12/spirit.go)**
+
 Lets be honest, I never started out wanting to make a process manager... I just
 wanted to deploy my code and run my applications.
 
